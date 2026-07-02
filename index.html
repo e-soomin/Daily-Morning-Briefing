@@ -1,0 +1,570 @@
+<!DOCTYPE html><script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Morning Briefing",
+  "schemaVersion": 1,
+  "description": "매일 오전 9시 자동 업데이트되는 IT·마케팅·경제 뉴스 브리핑 페이지",
+  "mcpTools": [],
+  "mcpServerNames": []
+}
+</script>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Soomin</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Segoe UI', sans-serif;
+    background: #f5f5f7; color: #1d1d1f;
+    height: 100vh; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* ── Sticky ─────────────────────────────────────────── */
+  .sticky-area { flex-shrink: 0; padding: 18px 16px 0; background: #f5f5f7; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-actions { display: flex; gap: 6px; }
+  .hdr-btn {
+    position: relative; width: 34px; height: 34px;
+    border: none; border-radius: 10px; background: #fff;
+    cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s;
+  }
+  .hdr-btn:hover { background: #e5e5ea; }
+  .badge {
+    position: absolute; top: 4px; right: 4px;
+    background: #F96A00; color: #fff;
+    font-size: 9px; font-weight: 700;
+    min-width: 14px; height: 14px; border-radius: 7px; padding: 0 3px;
+    display: none; align-items: center; justify-content: center;
+  }
+
+  /* ── Date nav ───────────────────────────────────────── */
+  .date-nav { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .nav-arrow {
+    width: 32px; height: 32px; border: none; border-radius: 8px;
+    background: #fff; color: #1d1d1f; font-size: 17px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.12s; line-height: 1;
+  }
+  .nav-arrow:disabled { color: #c7c7cc; background: #ebebeb; cursor: default; }
+  .nav-arrow:not(:disabled):hover { background: #e5e5ea; }
+  .date-chip-btn {
+    flex: 1; height: 32px; border: 1px solid #e5e5ea; border-radius: 20px;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    background: #fff; color: #3a3a3c; transition: background 0.12s;
+  }
+  .date-chip-btn:hover { background: #f5f5f7; }
+
+  /* ── Summary ────────────────────────────────────────── */
+  .summary-bar {
+    background: #fff; border-radius: 12px; margin-bottom: 10px;
+    border-left: 3px solid #F96A00; padding: 10px 12px;
+    display: none; align-items: baseline; gap: 8px;
+  }
+  .sum-label { font-size: 10px; font-weight: 700; color: #F96A00; letter-spacing: 0.5px; text-transform: uppercase; flex-shrink: 0; }
+  .sum-preview { font-size: 12px; color: #3a3a3c; line-height: 1.5; }
+
+  /* ── Tabs ───────────────────────────────────────────── */
+  .tabs { display: flex; gap: 6px; padding-bottom: 12px; }
+  .tab-btn {
+    flex: 1; padding: 8px 6px; border: none; border-radius: 10px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    background: #fff; color: #6e6e73; transition: all 0.12s;
+  }
+  .tab-btn.active { background: #1d1d1f; color: #fff; }
+  .tab-btn:not(.active):hover { background: #e5e5ea; }
+
+  /* ── Scroll ─────────────────────────────────────────── */
+  .scroll-area {
+    flex: 1; overflow-y: auto; padding: 10px 16px 120px;
+    scrollbar-width: thin; scrollbar-color: #d1d1d6 transparent;
+  }
+  .scroll-area::-webkit-scrollbar { width: 4px; }
+  .scroll-area::-webkit-scrollbar-thumb { background: #d1d1d6; border-radius: 4px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .region-header {
+    font-size: 11px; font-weight: 700; color: #86868b;
+    margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .region-header:first-child { margin-top: 0; }
+
+  /* ── News card ──────────────────────────────────────── */
+  .news-card {
+    background: #fff; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 8px; position: relative;
+  }
+  .card-actions {
+    position: absolute; top: 12px; right: 12px;
+    display: flex !important; gap: 4px;
+    opacity: 1 !important; visibility: visible !important;
+  }
+  .card-btn {
+    width: 28px; height: 28px; border: none; border-radius: 7px;
+    background: #f5f5f7; cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s;
+  }
+  .card-btn:hover { background: #e5e5ea; }
+  .card-btn.scrapped { background: #FFF0E5; }
+  .news-title {
+    font-size: 14px; font-weight: 600; line-height: 1.4;
+    margin-bottom: 6px; color: #1d1d1f; padding-right: 40px;
+    word-break: keep-all; overflow-wrap: break-word;
+  }
+  .news-summary { font-size: 13px; color: #3a3a3c; line-height: 1.55; margin-bottom: 8px; word-break: keep-all; overflow-wrap: break-word; }
+  .news-source { font-size: 11px; color: #86868b; margin-bottom: 8px; }
+  .news-source a { color: #86868b; text-decoration: none; }
+  .news-source a:hover { text-decoration: underline; }
+  .news-insight { font-size: 12px; color: #3a3a3c; border-left: 2px solid #F96A00; padding: 2px 8px; line-height: 1.55; display: block; word-break: keep-all; overflow-wrap: break-word; }
+
+  /* ── Empty ──────────────────────────────────────────── */
+  .empty { text-align: center; padding: 52px 20px; color: #86868b; font-size: 14px; line-height: 1.7; }
+  .empty .icon { font-size: 30px; margin-bottom: 10px; }
+
+  /* ── Panels (shared) ────────────────────────────────── */
+  .panel-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.28); z-index: 100;
+    justify-content: center; align-items: flex-end;
+  }
+  .panel-overlay.open { display: flex; }
+  .panel-sheet {
+    background: #fff; border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 420px;
+    max-height: 80vh; display: flex; flex-direction: column;
+    animation: slideUp 0.22s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(60px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 16px 12px; flex-shrink: 0; border-bottom: 1px solid #f0f0f5;
+  }
+  .panel-title { font-size: 15px; font-weight: 700; }
+  .panel-close {
+    width: 28px; height: 28px; border: none; border-radius: 8px;
+    background: #f5f5f7; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .panel-close:hover { background: #e5e5ea; }
+  .panel-body { overflow-y: auto; padding: 12px 16px 32px; flex: 1; }
+
+  /* ── Scrap card ─────────────────────────────────────── */
+  .scrap-card {
+    background: #f5f5f7; border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 10px; position: relative;
+  }
+  .scrap-card-top {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 8px; margin-bottom: 5px;
+  }
+  .scrap-card-info { flex: 1; min-width: 0; }
+  .scrap-meta { font-size: 10px; color: #86868b; margin-bottom: 4px; }
+  .scrap-title { font-size: 13px; font-weight: 600; line-height: 1.4; }
+  .scrap-del {
+    flex-shrink: 0; width: 26px; height: 26px; border: none; border-radius: 7px;
+    background: transparent; cursor: pointer; font-size: 14px; color: #c7c7cc;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s, color 0.12s;
+  }
+  .scrap-del:hover { background: #FFE5E5; color: #ff3b30; }
+  .scrap-insight {
+    font-size: 11px; color: #3a3a3c;
+    border-left: 2px solid #F96A00; padding: 1px 6px;
+    margin: 8px 0; line-height: 1.5;
+  }
+
+  /* memo view/edit */
+  .memo-view {
+    font-size: 12px; color: #3a3a3c; cursor: pointer;
+    background: #fff; border-radius: 8px; padding: 7px 10px;
+    line-height: 1.5; border: 1px solid transparent;
+    transition: border-color 0.12s;
+  }
+  .memo-view.empty { color: #b0b0b8; }
+  .memo-view:hover { border-color: #e5e5ea; }
+  .memo-edit { display: none; }
+  .memo-textarea {
+    width: 100%; border: 1.5px solid #F96A00; border-radius: 8px;
+    padding: 7px 10px; font-size: 12px; font-family: inherit;
+    resize: none; line-height: 1.5; background: #fff; outline: none;
+    min-height: 60px;
+  }
+  .memo-buttons { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; }
+  .memo-save {
+    padding: 5px 14px; border: none; border-radius: 8px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    background: #1d1d1f; color: #fff;
+  }
+  .memo-cancel {
+    padding: 5px 12px; border: none; border-radius: 8px;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    background: #e5e5ea; color: #3a3a3c;
+  }
+
+  /* ── Weekly ─────────────────────────────────────────── */
+  .week-item { margin-bottom: 14px; }
+  .week-date { font-size: 10px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+  .week-summary { font-size: 13px; color: #1d1d1f; line-height: 1.55; background: #f5f5f7; border-radius: 10px; padding: 10px 12px; border-left: 3px solid #F96A00; }
+  .week-empty { text-align: center; padding: 40px 20px; color: #86868b; font-size: 13px; }
+
+  /* ── Calendar ───────────────────────────────────────── */
+  .cal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.28); z-index: 100; justify-content: center; align-items: flex-end; }
+  .cal-overlay.open { display: flex; }
+  .cal-modal { background: #fff; border-radius: 20px 20px 0 0; padding: 20px 16px 36px; width: 100%; max-width: 420px; animation: slideUp 0.22s ease; }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .cal-header-label { font-size: 15px; font-weight: 700; }
+  .cal-nav-btn { width: 32px; height: 32px; border: none; border-radius: 8px; background: #f5f5f7; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .cal-nav-btn:hover { background: #e5e5ea; }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7,1fr); margin-bottom: 4px; }
+  .cal-weekdays span { text-align: center; font-size: 11px; font-weight: 600; color: #86868b; padding: 4px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+  .cal-day { aspect-ratio: 1; border: none; border-radius: 8px; font-size: 13px; background: transparent; color: #1d1d1f; display: flex; align-items: center; justify-content: center; position: relative; cursor: default; }
+  .cal-day.has-data { background: #f0f0f5; font-weight: 600; cursor: pointer; }
+  .cal-day.has-data:hover { background: #e5e5ea; }
+  .cal-day.selected { background: #1d1d1f !important; color: #fff !important; }
+  .cal-day.today-mark { color: #F96A00; font-weight: 700; }
+  .cal-day.today-mark.selected { color: #fff; }
+  .cal-day.no-data-past { color: #c7c7cc; cursor: pointer; }
+  .cal-day.future-day { color: #d1d1d6; }
+  .cal-day.has-data::after { content:''; width:4px; height:4px; background:#F96A00; border-radius:50%; position:absolute; bottom:4px; left:50%; transform:translateX(-50%); }
+  .cal-day.selected::after { background: #FFB380; }
+
+  /* ── Toast ──────────────────────────────────────────── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(72px);
+    background: #1d1d1f; color: #fff;
+    font-size: 13px; font-weight: 500; padding: 10px 20px;
+    border-radius: 20px; transition: transform 0.22s ease;
+    z-index: 200; white-space: nowrap; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="sticky-area">
+  <div class="header">
+    <h1>🐯 For Soomin</h1>
+    <div class="header-actions">
+      <button class="hdr-btn" onclick="openWeekly()" title="주간 흐름">📊</button>
+      <button class="hdr-btn" id="scrap-btn" onclick="openScraps()" title="스크랩">🔖
+        <span class="badge" id="scrap-badge"></span>
+      </button>
+    </div>
+  </div>
+  <div class="date-nav">
+    <button class="nav-arrow" id="btn-prev" onclick="navDate(-1)" disabled>‹</button>
+    <button class="date-chip-btn" id="current-date-chip" onclick="openCal()">—</button>
+    <button class="nav-arrow" id="btn-next" onclick="navDate(1)" disabled>›</button>
+  </div>
+  <div class="summary-bar" id="summary-bar">
+    <span class="sum-label">핵심 흐름</span>
+    <span class="sum-preview" id="sum-preview"></span>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('it',this)">🖥️ IT</button>
+    <button class="tab-btn" onclick="switchTab('marketing',this)">📣 마케팅</button>
+    <button class="tab-btn" onclick="switchTab('economy',this)">💰 경제</button>
+  </div>
+</div>
+
+<div class="scroll-area" id="scroll-area">
+  <div id="panel-it"        class="tab-panel active"></div>
+  <div id="panel-marketing" class="tab-panel"></div>
+  <div id="panel-economy"   class="tab-panel"></div>
+</div>
+
+<!-- Scrap panel -->
+<div class="panel-overlay" id="scrap-overlay" onclick="closeScraps()">
+  <div class="panel-sheet" onclick="event.stopPropagation()">
+    <div class="panel-header">
+      <span class="panel-title" id="scrap-panel-title">스크랩</span>
+      <button class="panel-close" onclick="closeScraps()">✕</button>
+    </div>
+    <div class="panel-body" id="scrap-body"></div>
+  </div>
+</div>
+
+<!-- Weekly panel -->
+<div class="panel-overlay" id="weekly-overlay" onclick="closeWeekly()">
+  <div class="panel-sheet" onclick="event.stopPropagation()">
+    <div class="panel-header">
+      <span class="panel-title">이번 주 흐름</span>
+      <button class="panel-close" onclick="closeWeekly()">✕</button>
+    </div>
+    <div class="panel-body" id="weekly-body"></div>
+  </div>
+</div>
+
+<!-- Calendar -->
+<div class="cal-overlay" id="cal-overlay" onclick="closeCal()">
+  <div class="cal-modal" onclick="event.stopPropagation()">
+    <div class="cal-header">
+      <button class="cal-nav-btn" onclick="changeCalMonth(-1)">‹</button>
+      <span class="cal-header-label" id="cal-month-label"></span>
+      <button class="cal-nav-btn" onclick="changeCalMonth(1)">›</button>
+    </div>
+    <div class="cal-weekdays"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const HISTORY_DATA = {"2026.06.30":{"date":"2026.06.30","it":{"domestic":[{"title":"카카오그룹, 'Human-centric AI'와 글로벌 팬덤 OS로 성장 기어 전환","summary":"카카오그룹이 2026년을 '응축의 시간'을 마무리하고 '방향성 있는 성장'을 본격화하는 원년으로 선언했다. 사람 중심의 AI(Human-centric AI)와 글로벌 팬덤 OS를 두 축으로 삼아 AI·글로벌 전략을 가속화한다. 카카오톡을 기반으로 한 AI 서비스 연동과 해외 K-콘텐츠 플랫폼 확장이 핵심 방향이다.","insight":"카카오의 'Human-centric AI' 기조는 기술 중심이 아닌 사용자 행동 흐름에 AI를 자연스럽게 녹이는 전략으로, 국내 슈퍼앱 구조에서 AI 기능 설계 시 참고할 만한 방향성이다.","source_name":"카카오 공식 블로그","source_url":"https://www.kakaocorp.com/page/detail/11870"},{"title":"공공 AI 박람회 KPAIX 2026 성황리 종료, 52개 AI 기업 참여","summary":"행정안전부와 NIA가 주최한 '2026 공공 AI 박람회'가 일산 킨텍스에서 개최됐다. 삼성SDS, LG CNS, 네이버클라우드, 카카오 등 대형 기업과 앨리스그룹 등 혁신 스타트업 52사가 참여해 공공 AI 혁신 사례를 선보였다. 공공 부문의 AI 도입 실증 사례가 민간 확산의 레퍼런스로 부각됐다.","insight":"공공 AI 박람회의 B2G 레퍼런스는 민간 기업의 AI 도입 설득 자료로 활용 가능하며, 특히 규제가 엄격한 산업군(금융·의료)에서 'public sector first' 전략의 타당성을 뒷받침한다.","source_name":"다음 뉴스","source_url":"https://v.daum.net/v/20260622111309295"},{"title":"한국 기업 AI 도입률 61%지만 조직 내재화는 6.7%에 불과","summary":"2026년 한국 기업의 생성형 AI 도입률은 61%에 달하지만 실제 조직 차원의 내재화는 6.7%에 그치는 것으로 나타났다. AI는 도입됐지만 조직 구조·프로세스·문화는 아직 준비되지 않은 상태다. 도구 도입과 실질적 활용 역량 사이의 간극이 올해 국내 AI 시장의 핵심 과제로 부상했다.","insight":"이 데이터는 AI 기능 출시만으로는 부족하며, 사용자의 워크플로 내 자연스러운 통합과 온보딩 설계가 실제 활성화의 핵심임을 시사한다. PM은 도입률보다 '주간 활성 사용률'을 KPI로 잡아야 한다.","source_name":"Carrot Global Blog","source_url":"https://www.carrotglobalblog.com/2026-korean-enterprise-ai-utilization-status-debriefing-260121/"}],"international":[{"title":"OpenAI·Anthropic, 사용자 '효율성 전환'으로 새로운 AI 수익 현실 직면","summary":"기업들이 AI 비용을 효율화하면서 무제한 토큰 사용에서 벗어나 ROI 중심으로 AI 예산을 재편하고 있다. OpenAI와 Anthropic 모두 비밀리에 IPO를 신청했으나 예상보다 낮은 성장 궤도에 처할 수 있다는 우려가 제기됐다. 일부 AI 스타트업은 비용 절감을 위해 DeepSeek 등 저가 대안으로 전환하고 있다.","insight":"AI 벤더 입장에서 토큰 소비 극대화 전략의 한계가 드러나고 있다. PM 관점에서는 사용량 기반 과금 모델을 태스크 완료 기반 또는 성과 기반 가격 모델로 재설계하는 시점을 검토해야 한다.","source_name":"CNBC","source_url":"https://www.cnbc.com/2026/06/26/openai-anthropic-new-ai-spending-reality-as-users-shift-to-efficiency.html"},{"title":"Google AI 핵심 연구자들 Anthropic으로 연이어 이직, 인재 유출 가속","summary":"Google의 핵심 AI 연구자 Jonas Adler와 Alexander Pritzel이 Anthropic으로 이직을 준비 중이다. 노벨상 수상자 John Jumper와 스타 연구자 Noam Shazeer도 각각 Anthropic·OpenAI로 떠났다. Google의 AI 인재 유출이 구조적 문제로 자리잡으면서 Gemini 모델 개발 역량에 대한 우려가 커지고 있다.","insight":"AI 업계의 인재 이동은 단순 경쟁이 아닌 연구 자율성과 임팩트 기회에 대한 선호를 반영한다. Anthropic의 성장세(ARR $300억 돌파)가 Google 대비 더 빠른 모델 개선 속도로 이어질 가능성을 주시해야 한다.","source_name":"TechCrunch","source_url":"https://techcrunch.com/2026/06/24/ai-researchers-continue-to-leave-google-for-its-rivals/"},{"title":"Amazon 자체 반도체 사업 연간 매출 200억 달러 돌파, YoY 100% 성장","summary":"Amazon의 커스텀 실리콘 사업(Graviton, Trainium, Nitro)이 연간 200억 달러 매출로 글로벌 3대 데이터센터 칩 사업자 반열에 올랐다. 전년 대비 100% 이상 성장하며 Nvidia 의존도를 줄이는 클라우드 수직 통합 전략이 성과를 내고 있다. AI 인프라 경쟁에서 자체 칩 보유 여부가 핵심 경쟁 변수로 부상했다.","insight":"AWS의 자체 칩 전략은 AI 서비스 원가 구조를 근본적으로 바꾸고 있다. AI 기반 제품을 설계하는 PM은 클라우드 인프라 선택이 장기적 단가와 성능 차별화에 미치는 영향을 고려해야 한다.","source_name":"AI News","source_url":"https://www.artificialintelligence-news.com/"}]},"marketing":{"domestic":[{"title":"2026년 한국 온라인 광고비, 전체의 60% 돌파하며 매체 구조 재편 가속","summary":"2026년 국내 온라인 광고비가 총 광고비의 60%를 넘어서며 방송·인쇄 매체와의 양극화가 심화되고 있다. 총 광고비는 약 17조 9천억 원 규모로 완만한 성장이 예상되나 성장의 과실은 디지털 채널에 집중됐다. 온라인 중심의 구조 재편이 광고주의 미디어 믹스 전략 전환을 압박하고 있다.","insight":"광고비의 디지털 집중은 퍼포먼스 마케팅 중심의 예산 배분을 강화하는 신호다. PM은 신규 기능의 마케팅 채널 선택 시 온라인 네이티브 포맷(숏폼, 검색 광고)의 ROI를 우선 검증해야 한다.","source_name":"서울STV뉴스","source_url":"https://www.stvnews.kr/news/articleView.html?idxno=14879"},{"title":"나스미디어, 2026 디지털 마케팅 4대 트렌드로 AI·발견형 커머스·OTT·DOOH 제시","summary":"KT 나스미디어가 발표한 2026 디지털 미디어·마케팅 전망 보고서에서 AI 마케팅, 발견형 커머스, OTT 광고, DOOH를 4대 핵심 트렌드로 꼽았다. AI를 활용한 캠페인 자동 최적화와 개인화가 광고 집행의 표준이 되어가고 있다. 특히 발견형 커머스는 검색 의도 없이도 구매를 유도하는 새로운 퍼널 모델로 주목받고 있다.","insight":"발견형 커머스는 기존 퍼널(인지→고려→구매)을 파괴하고 콘텐츠 소비 중 즉시 구매 전환을 가능하게 한다. 커머스 기능을 가진 프로덕트라면 발견 맥락에서의 구매 진입점 설계를 로드맵에 포함해야 한다.","source_name":"KT 나스미디어","source_url":"https://www.nasmedia.co.kr/%EC%A0%95%EA%B8%B0%EB%B3%B4%EA%B3%A0%EC%84%9C/2025%EB%85%84-12%EC%9B%94-2026-%EB%94%94%EC%A7%80%ED%84%B8-%EB%AF%B8%EB%94%94%EC%96%B4-%EB%A7%88%EC%BC%80%ED%8C%85-%EC%A0%84%EB%A7%9D/"},{"title":"구글 코리아, 2026 디지털 광고·커머스 전망 발표 - 매끄럽고 개인화된 경험의 시대","summary":"구글 코리아가 2026년 디지털 광고 및 커머스 시장을 '매끄럽고 개인화된 경험의 시대'로 정의했다. AI 기반 개인화 광고, 프라이버시 우선 전략, 숏폼 비디오 커머스가 핵심 키워드로 제시됐다. '도달'이 아닌 '구매까지의 직접 전환'을 책임지는 방향으로 광고 패러다임이 전환되고 있다고 분석했다.","insight":"광고가 구매 퍼널의 시작점이 아닌 완결점으로 이동하는 트렌드는 마케팅과 프로덕트의 경계를 허문다. 특히 앱 내 구매 전환 플로우와 광고 랜딩 경험을 통합 설계하는 것이 전환율의 핵심 변수가 될 것이다.","source_name":"Google Korea 공식 블로그","source_url":"https://blog.google/intl/ko-kr/company-news/technology/2026-digital-ads-commerce-outlook-kr/"}],"international":[{"title":"Meta, 2026년 디지털 광고 매출 처음으로 Google 추월 전망","summary":"Meta가 2026년 글로벌 디지털 광고 매출에서 처음으로 Google을 추월할 것으로 전망됐다. Meta의 예상 매출은 2,435억 달러, Google은 2,395억 달러로 약 20년 만에 왕좌 교체가 예고됐다. AI 기반 광고 타겟팅과 릴스의 폭발적 성장이 Meta의 광고 경쟁력을 끌어올렸다는 분석이다.","insight":"Meta의 역전은 소셜·발견형 광고 채널의 구매 전환 효율이 검색 광고를 뛰어넘기 시작했음을 의미한다. 마케팅 채널 믹스 재검토 시 Meta 릴스 및 AI 기반 타겟팅 예산 비중 상향을 검토할 타이밍이다.","source_name":"Two Octobers","source_url":"https://twooctobers.com/blog/digital-marketing-updates-june-2026/"},{"title":"ChatGPT 광고 셀프서브 출시·AI 검색 월간 사용자 10억 명 돌파","summary":"ChatGPT가 최소 집행 금액 없는 셀프서브 광고 플랫폼을 출시하며 검색 광고 시장에 본격 진입했다. Google AI Mode는 월간 활성 사용자 10억 명을 돌파했고 AI Overviews는 25억 명에 달한다. 그러나 전통적 Google 상위 랭커와 AI Overview 인용 사이의 상관관계는 약 38%로 분리되고 있다.","insight":"검색 SEO와 AI 검색 최적화(AEO)가 완전히 별개의 전략으로 분기되고 있다. 콘텐츠 전략을 수립하는 PM이라면 AI 검색 인용 가능성을 높이는 구조화된 콘텐츠 설계(답변형, 출처 명시)를 별도로 준비해야 한다.","source_name":"B2The7","source_url":"https://www.b2the7.com/news-blog/marketing-trends-june-2026-ai-search-chatgpt-ads-meta"},{"title":"마케터 75%, AI 생성 크리에이티브의 브랜드 동질화 우려 - Smartly 2026 보고서","summary":"Smartly의 2026 디지털 광고 트렌드 보고서에 따르면 마케터의 75%가 AI 생성 크리에이티브가 브랜드를 동질화할 위험을 우려하고 있다. 86%는 경쟁사와 유사한 AI 생성 광고를 이미 목격했다고 답했다. 반면 캠페인 런칭에 여전히 3~4주가 소요된다는 응답이 41%로 실행 속도와 품질 차별화 사이의 딜레마가 심화됐다.","insight":"AI 광고 자동화의 역설: 효율은 높아지지만 차별화는 줄어든다. PM 관점에서 AI 크리에이티브 도구 도입 시 브랜드 보이스 가이드라인과 인간 편집 레이어를 품질 게이트로 반드시 설계해야 한다.","source_name":"Smartly","source_url":"https://www.smartly.io/digital-advertising-trends/2026"}]},"economy":{"domestic":[{"title":"6월 소비자심리지수 106.6, 전월 대비 0.5p 상승","summary":"2026년 6월 소비자심리지수(CCSI)가 106.6을 기록하며 전월 대비 0.5포인트 상승했다. 100을 상회하는 수준으로 소비자들의 경기 판단이 장기 평균보다 낙관적임을 나타낸다. 다만 고유가와 환율 부담이 수입물가를 밀어올리고 있어 하반기 소비 심리 유지에 변수가 될 전망이다.","insight":"CCSI가 100을 웃도는 상황에서도 에너지·환율 리스크가 존재한다. B2C 서비스 PM이라면 소비자 가처분 소득 변화에 민감한 가격 정책 검토 시 이 두 변수를 동시에 모니터링해야 한다.","source_name":"한국은행","source_url":"https://www.bok.or.kr/portal/main/main.do"},{"title":"6월 제조업 BSI 101.2로 소폭 개선, 비제조업은 95.4로 하락","summary":"2026년 6월 기업심리지수(BSI)에서 제조업은 전월 대비 0.4p 상승한 101.2를 기록하며 기준선을 소폭 상회했다. 반면 비제조업은 전월 대비 2.1p 하락한 95.4를 기록해 서비스 업종의 경기 체감이 악화됐다. 제조업과 비제조업 간 온도 차이가 확대되며 업종별 차별화된 경영 전략이 요구되고 있다.","insight":"비제조업 BSI 하락은 B2B SaaS·서비스 기업의 기업 고객 예산 삭감 가능성을 시사한다. 하반기 영업 전략 수립 시 고객사 업종별 경기 체감 격차를 반영한 세분화된 접근이 필요하다.","source_name":"뱅크몰","source_url":"https://www.bank-mall.co.kr/plus/blog/12673"},{"title":"개인사업자대출 자금 사용처 사후점검 기준 6월 30일부터 시행","summary":"은행연합회와 여신금융협회 등이 개인사업자대출의 자금 사용처 사후점검 기준을 오늘(6월 30일)부터 시행한다. 대출 실행 후 실제 자금 사용 내역을 확인하는 절차가 강화되며 금융기관의 리스크 관리 부담이 증가한다. 소상공인·자영업자 대상 금융 서비스 설계 시 이 규제 변화를 반드시 반영해야 한다.","insight":"금융 규제 강화는 핀테크·SMB 금융 서비스 PM에게 직접적 제약이 된다. 대출 프로세스 내 자금 사용처 인증 UX를 설계하거나 모니터링 기능을 선제적으로 탑재해 규제 대응력을 갖추는 것이 중요하다.","source_name":"뱅크몰","source_url":"https://www.bank-mall.co.kr/plus/blog/12673"}],"international":[{"title":"연준, 6월 FOMC서 기준금리 3.5~3.75% 동결 결정","summary":"미국 연방준비제도이사회(Fed)가 6월 FOMC 회의에서 기준금리를 3.5~3.75%로 동결했다. 새 의장 Kevin Warsh는 물가 안정 의지를 재확인하며 인플레이션이 2% 목표 수준으로 돌아올 때까지 금리를 유지하겠다고 밝혔다. 2026년 말 기준금리 중간값 전망이 3.8%로 상향되며 연내 추가 인상 가능성도 열려 있다.","insight":"연준의 금리 동결 장기화는 글로벌 스타트업의 자금 조달 환경이 여전히 타이트함을 의미한다. 성장 지출 대비 수익성을 투자자에게 증명해야 하는 압박이 지속될 것으로, PM은 기능 우선순위를 성장보다 수익성 중심으로 재조정할 필요가 있다.","source_name":"CNBC","source_url":"https://www.cnbc.com/2026/06/17/fed-interest-rate-decision-june-2026.html"},{"title":"중동 갈등·에너지 가격 상승으로 미국 인플레이션 2% 목표 달성 지연","summary":"중동 지역 분쟁으로 인한 에너지 가격 상승이 미국 물가를 연준 목표치(2%) 이상으로 유지시키는 주요 변수로 작용하고 있다. 공급 충격 기반의 인플레이션은 통화정책만으로 해결하기 어려워 금리 인상 압박이 커지고 있다. 시장은 2026년 하반기 추가 금리 인상 가능성을 상당 수준 반영하기 시작했다.","insight":"공급 측 인플레이션이 지속된다면 B2B SaaS의 계약 갱신 협상이나 B2C의 가격 인상 타이밍 결정이 중요해진다. 원가 상승분을 가격에 반영하는 시점과 방식을 선제적으로 기획해야 한다.","source_name":"Federal Reserve","source_url":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20260617a.htm"},{"title":"AI 투자 수익성 의구심에 나스닥 5% 급락, 빅테크 밸류에이션 재평가 국면","summary":"빅테크의 AI 인프라 투자가 실제 매출과 수익으로 이어지지 않는다는 투자자 불안이 커지며 나스닥이 약 5% 하락했다. 금리 인하 기대가 무너지고 할인율이 높아지면서 미래 현금흐름에 의존하는 기술주 밸류에이션이 직격탄을 맞았다. AI 투자 붐에 대한 거품 논쟁이 월가에서 본격화되고 있다.","insight":"AI 투자 회의론의 확산은 B2B AI 솔루션 판매 사이클에 영향을 미친다. 고객사의 AI 예산 승인이 까다로워질 수 있으므로 빠른 ROI 증명(90일 이내 측정 가능한 지표)을 세일즈 자료에 포함하는 전략이 필요하다.","source_name":"CBS News","source_url":"https://www.cbsnews.com/news/ai-bubble-tech-selloff-investment-consumer-business-demand/"}]},"summary":"AI 투자 거품 논쟁, 연준 금리 동결, Meta의 Google 광고 추월이 맞물리며 성장에서 효율과 수익성으로의 전환 압박이 IT·마케팅·경제 전 분야를 관통하는 하루"},"2026.07.01":{"date":"2026.07.01","it":{"domestic":[{"title":"매드업, 코스닥 상장 앞두고 청약 경쟁률 3305대 1 역대 최고 기록","summary":"글로벌 AI 마케팅 기업 매드업이 일반 청약에서 경쟁률 3305대 1, 청약증거금 약 6조 6000억원을 기록하며 올해 코스피·코스닥 통틀어 최고 기록을 세웠다. 매드업은 6월 26일 납입을 마치고 7월 1일 코스닥에 상장하며, 중기부·기보 주관 '2026년 유니콘브릿지' 사업에도 선정됐다.","insight":"AI 마케팅 솔루션 기업에 대한 시장 기대치가 최고조에 달했다는 신호로, 경쟁사 대비 차별화 포인트(자동화 효율·데이터 자산)를 명확히 제시하지 못하면 밸류에이션 거품 논란에 휘말릴 수 있다.","source_name":"서울경제","source_url":"https://www.sedaily.com/article/20059916"},{"title":"韓 이용자, 투자 판단·PPT 작성에 AI 적극 활용…글로벌 평균 웃돌아","summary":"국내 AI 서비스 이용자들은 자기소개서 작성(4.8%), 업무 완수(4.7%)에 이어 구매·투자 판단(4.4%), 발표자료 제작(3.5%) 순으로 AI를 활용하는 것으로 나타나 글로벌 평균보다 실무 밀착형 사용 비중이 높았다.","insight":"국내 사용자는 AI를 업무 의사결정에 직접 끌어들이고 있어, B2B SaaS라면 투자·기획 문서 자동화 기능을 우선순위 로드맵에 올릴 근거가 된다.","source_name":"ZDNet Korea","source_url":"https://zdnet.co.kr/view/?no=20260630170956"},{"title":"포털 AI 검색 올라탄 'K-엑사원'…줌, 정부 지원 AI 모델 첫 상용화","summary":"이스트에이드가 운영하는 포털 '줌'이 AI 검색 엔진을 LG AI연구원의 'K-엑사원'으로 교체했다. 정부 지원을 받는 국내 4대 파운데이션 모델 참여사 중 공공 지원 모델이 실제 소비자 서비스에 상용화된 첫 사례다.","insight":"자체 모델 없는 중소 플랫폼도 국산 파운데이션 모델을 API로 붙여 AI 검색을 구현할 수 있는 선례로, LLM 도입 시 자체 개발 대신 협업형 옵션도 비교 검토할 필요가 있다.","source_name":"ZDNet Korea","source_url":"https://zdnet.co.kr/view/?no=20260629161613"}],"international":[{"title":"OpenAI, IPO 앞두고 거물급 인재 영입…정책 조직 신설","summary":"OpenAI가 IPO를 앞두고 구글 딥마인드 출신 연구자 노암 셰이저, 전 백악관 AI 정책 담당자 딘 볼 등을 영입했다. 볼은 'Strategic Futures'라는 신설 조직을 이끌며 프론티어 AI 정책 대응을 총괄한다.","insight":"상장 전 정책·규제 대응 조직을 별도로 세우는 것은 각국 AI 규제 강화에 선제 대응하려는 포석으로, 국내 AI 서비스도 글로벌 진출 시 정책 리스크를 초기부터 전담 관리할 필요가 있다.","source_name":"TechCrunch","source_url":"https://techcrunch.com/2026/06/18/openai-is-bringing-on-some-big-guns-in-the-lead-up-to-its-ipo/"},{"title":"\"AI 때문에 잘렸다\"…2026년 빅테크 감원 15만명 육박, 논쟁 격화","summary":"2026년 들어 AI를 이유로 든 테크 기업 감원이 약 363건, 15만명에 달해 지난해보다 44% 빠른 속도로 진행되고 있다. 반면 'AI 고도 도입 기업'은 오히려 헤드카운트가 10.2% 늘고 신입 채용도 12% 증가해 상반된 흐름이 공존한다.","insight":"'감원 vs 고용 확대'라는 상반된 지표가 동시에 나오는 것은 AI 도입 성숙도에 따라 조직 결과가 갈린다는 뜻으로, PM은 AI 도입을 인력 대체가 아닌 역량 재배치 관점에서 설계해야 대내외 반발을 줄일 수 있다.","source_name":"TechCrunch","source_url":"https://techcrunch.com/2026/06/29/the-ai-jobs-debate-just-got-messier/"},{"title":"알리바바 AI 영상모델, 소라·시댄스 주춤한 사이 글로벌 2위로 도약","summary":"OpenAI가 수익성 문제로 소라 서비스를 중단하고 바이트댄스도 저작권 이슈로 시댄스 2.0 해외 출시를 무기한 연기하면서, 알리바바 클라우드의 'HappyHorse 1.1'이 API 전면 개방과 함께 시장 공백을 메우고 있다.","insight":"선두주자의 법적·수익성 리스크가 후발주자에게 기회가 되는 사례로, 생성형 AI 기능을 제품에 붙일 때는 특정 모델 종속을 피하고 대체 공급사를 미리 확보해두는 게 안전하다.","source_name":"VentureBeat","source_url":"https://venturebeat.com/technology/alibabas-ai-video-model-rises-to-no-2-in-global-rankings-as-openais-sora-and-bytedances-seedance-fall-away"}]},"marketing":{"domestic":[{"title":"2026년 광고시장, 디지털 중심 재편 가속…온라인광고 비중 60% 돌파","summary":"코바코에 따르면 2025년 온라인광고가 전체 광고비의 약 60%를 차지한 데 이어 2026년에도 디지털 중심 구조재편이 가속화될 전망이다. 데이터 활용, 알고리즘 투명성, 광고 신뢰성이 핵심 과제로 부상하고 있다.","insight":"예산 배분이 이미 디지털로 기울어진 상황에서 차별화 지점은 '얼마나 쓰느냐'가 아니라 '알고리즘 투명성과 신뢰를 어떻게 증명하느냐'로 이동했으므로, 매체 성과 리포팅에 설명가능성 지표를 추가해야 한다.","source_name":"한국방송광고진흥공사(KOBACO)","source_url":"https://www.kobaco.co.kr/site/main/board/news/24646"},{"title":"나스미디어, \"2026년 인앱 전략·AI 에이전트 상용화가 핵심 변화\"","summary":"kt 나스미디어가 발표한 2026 전망 보고서는 인앱 전략과 경험 루프, AI 에이전트 상용화, 참여형 스트리밍 확대, 파트너십 광고 부상을 4대 트렌드로 제시했다.","insight":"AI 에이전트가 검색·구매를 대신 처리하는 흐름이 국내에도 본격화되는 신호로, 앱 내 전환 퍼널을 에이전트가 파싱하기 쉬운 구조(구조화 데이터, 명확한 CTA)로 재설계할 시점이다.","source_name":"kt 나스미디어","source_url":"https://www.nasmedia.co.kr/%EC%A0%95%EA%B8%B0%EB%B3%B4%EA%B3%A0%EC%84%9C/2025%EB%85%84-12%EC%9B%94-2026-%EB%94%94%EC%A7%80%ED%84%B8-%EB%AF%B8%EB%94%94%EC%96%B4-%EB%A7%88%EC%BC%80%ED%8C%85-%EC%A0%84%EB%A7%9D/"},{"title":"메조미디어, \"2026년 마케팅 4대 키워드는 AI마케팅·발견형커머스·OTT·DOOH\"","summary":"메조미디어는 2026년 주목할 트렌드로 AI 마케팅, 발견형 커머스, OTT, DOOH 4가지를 제시하며 광고·미디어 산업의 변화 방향을 전망했다.","insight":"'발견형 커머스'가 별도 키워드로 꼽힌 것은 검색 기반 구매에서 알고리즘 추천 기반 구매로 소비자 여정이 이동하고 있다는 뜻으로, SEO만큼 추천 피드 노출 전략에 투자를 늘려야 한다.","source_name":"메조미디어","source_url":"https://brunch.co.kr/@mezzomedia/162"}],"international":[{"title":"브랜드·에이전시, AI 활용 단계 \"왜\"에서 \"어떻게\"로 전환","summary":"마케팅다이브에 따르면 챗GPT 출시 3년이 지난 지금 브랜드와 에이전시들은 AI 도입 여부를 묻던 단계를 지나 실제 운영에 어떻게 녹일지를 고민하는 실행 단계로 넘어갔다.","insight":"실험 단계를 지나 실무 표준화 단계에 진입했다는 신호로, 아직 파일럿 수준에 머물러 있는 조직이라면 경쟁사 대비 실행 속도에서 뒤처지고 있다는 경고로 받아들여야 한다.","source_name":"Marketing Dive","source_url":"https://www.marketingdive.com/news/how-brands-agencies-are-operationalizing-ai-as-the-tech-matures/816241/"},{"title":"구글, AI 검색광고 대대적 업그레이드…'Ask Advisor' 연내 출시","summary":"구글이 마케팅 라이브 서밋에서 광고·커머스 신제품군을 공개하며, 구글애즈·애널리틱스·마케팅플랫폼·머천트센터 전반의 AI 에이전트를 하나의 진입점으로 통합하는 'Ask Advisor'를 연내 출시한다고 밝혔다.","insight":"광고주 워크플로우가 개별 툴에서 통합 AI 에이전트 인터페이스로 이동하면, 매체별 담당자 중심의 운영 조직 구조도 에이전트 오케스트레이션 중심으로 재편할 필요가 생긴다.","source_name":"Marketing Dive","source_url":"https://www.marketingdive.com/news/google-upgrades-ai-search-ads-what-marketers-need-to-know/820663/"},{"title":"OpenAI, 칸 라이언즈서 ChatGPT 광고 전략 공개…\"구매의도 높은 유저 20%\"","summary":"OpenAI는 칸 라이언즈 무대에서 ChatGPT 광고 사업 방향을 처음 공개하며, 챗GPT 내 질의의 약 20%가 직접적 구매 의도를 담고 있다고 밝혔다.","insight":"대화형 AI가 검색엔진 못지않은 구매 의도 트래픽을 확보했다는 의미로, 검색광고 예산의 일부를 대화형 AI 광고 채널로 조기에 테스트 배분해볼 근거가 생겼다.","source_name":"Marketing Dive","source_url":"https://www.marketingdive.com/news/how-openai-positioning-chatgpt-ads-cannes-lions-debut/823476/"}]},"economy":{"domestic":[{"title":"코스피 8%대 급락 7,400선…서킷브레이커 발동","summary":"미 5월 고용지표 호조로 연준의 연내 금리인상 전망이 부각되며 기술주가 급락했고, 미-이란 종전협상 교착과 호르무즈 해협 인근 무력충돌 우려까지 겹치며 코스피가 8% 넘게 급락해 서킷브레이커가 발동됐다.","insight":"지정학 리스크와 통화정책 불확실성이 동시에 겹치는 국면에서는 마케팅 예산도 분기 중 재편 가능성을 열어두고, 특히 환헤지 노출이 큰 브랜드는 캠페인 집행 시점을 유연하게 가져가야 한다.","source_name":"MBC 뉴스","source_url":"https://imnews.imbc.com/replay/2026/nw930/article/6828439_36996.html"},{"title":"코스피 6월 30일 8,540선 마감…코스닥 911선","summary":"6월 30일 코스피는 8,540.13에, 코스닥은 911.33에 장을 마쳤다.","insight":"지수 자체보다 변동성 확대 국면이라는 맥락이 중요하며, 금융·투자 버티컬 광고 캠페인은 리스크 문구·면책조항 검토를 강화할 시점이다.","source_name":"Investing.com","source_url":"https://kr.investing.com/indices/kospi"},{"title":"한국은행, 기준금리 2.5% 동결…환율·지정학 리스크 주시","summary":"한국은행 금융통화위원회는 달러 강세, 엔화 약세, 지정학 리스크, 해외투자 증가로 원달러 환율이 1,400원대 중후반까지 오른 상황에서 기준금리를 연 2.5%로 동결하고 당분간 흐름을 지켜보기로 했다.","insight":"고환율이 장기화되면 해외 SaaS·광고 플랫폼 결제 비용이 실질적으로 오르므로, 해외 매체·툴 계약이 많은 조직은 환헤지 또는 원화 결제 전환 협상을 검토할 필요가 있다.","source_name":"토스뱅크","source_url":"https://www.tossbank.com/articles/baserate2601"}],"international":[{"title":"美 연준, 6월 FOMC서 기준금리 3.50~3.75% 동결","summary":"연준은 6월 FOMC에서 기준금리를 3.50~3.75%로 동결했다. 중동 분쟁발 불확실성에도 생산성·설비투자가 견조해 경기는 완만히 확장 중이나, 인플레이션은 목표치 2%를 웃돌고 있다고 진단했다.","insight":"고금리 장기화 시나리오가 유지되는 만큼, 해외 진출·투자 유치를 계획 중인 스타트업이라면 자금 조달 비용 상승을 전제로 한 시나리오 플랜을 준비해야 한다.","source_name":"Federal Reserve","source_url":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20260617a.htm"},{"title":"세계은행, 2026년 세계 성장률 전망 2.6%로 상향…\"2020년대 최악 저성장 10년\" 경고","summary":"세계은행은 2026년 세계 성장률 전망치를 기존 2.4%에서 2.6%로 상향 조정했다. 미국 경제의 예상 밖 호조가 상향의 3분의 2를 차지했지만, 이 추세가 지속돼도 2020년대는 1960년대 이후 가장 저성장한 10년이 될 것이라고 경고했다.","insight":"단기 상향 조정에도 구조적 저성장 기조는 바뀌지 않았다는 신호로, 신규 시장 진출 사업계획서에 낙관적 거시 가정을 넣기보다 저성장 시나리오를 기본값으로 두는 게 안전하다.","source_name":"World Bank","source_url":"https://www.worldbank.org/en/news/press-release/2026/01/13/global-economic-prospects-january-2026-press-release"},{"title":"연준, 6월 경제전망(SEP) 발표…금리인하 속도 두고 위원 간 이견 확인","summary":"연준이 6월 FOMC와 함께 공개한 경제전망요약(SEP)에서 위원들의 향후 금리 경로 전망(점도표)이 갈리며 인하 속도에 대한 이견이 드러났다.","insight":"통화정책 경로에 대한 불확실성이 큰 만큼, 환율·금리에 민감한 해외 마케팅 예산(미국 매체 집행 등)은 단일 시나리오가 아닌 레인지 기반으로 편성하는 게 리스크 관리에 유리하다.","source_name":"Federal Reserve","source_url":"https://www.federalreserve.gov/monetarypolicy/fomcprojtabl20260617.htm"}]},"summary":"AI가 기업 채용·투자·광고 전략의 핵심 변수로 자리잡는 동시에, 중동發 지정학 리스크와 고환율·고금리가 실물경제 불확실성을 키우는 하루"}};
+// ─────────────────────────────────────────────────────────────────────────
+
+const SCRAP_KEY = 'morning_briefing_scraps';
+const CAT_LABEL = { it:'IT', marketing:'마케팅', economy:'경제' };
+
+window._cards = {};
+
+let currentDate = '';
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let toastTimer = null;
+
+/* ── Storage (scraps only) ─────────────────────────── */
+function loadScraps()  { try { return JSON.parse(localStorage.getItem(SCRAP_KEY)||'{}'); }  catch { return {}; } }
+function saveScraps(s) { localStorage.setItem(SCRAP_KEY, JSON.stringify(s)); }
+
+/* ── Boot ──────────────────────────────────────────── */
+function init() {
+  updateScrapBadge();
+  const dates = allDates();
+  if (dates.length) selectDate(dates[dates.length - 1]);
+  else {
+    document.getElementById('current-date-chip').textContent = '기록 없음';
+    document.getElementById('btn-prev').disabled = true;
+    document.getElementById('btn-next').disabled = true;
+  }
+}
+
+/* ── Helpers ───────────────────────────────────────── */
+function fmtDate(d) { return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`; }
+function allDates() { return Object.keys(HISTORY_DATA).sort((a,b) => a.localeCompare(b)); }
+function cardId(title) { return 'c' + [...title].reduce((a,c) => (a*31+c.charCodeAt(0))|0, 0).toString(36).replace('-','_'); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ── Date select ───────────────────────────────────── */
+function selectDate(date) {
+  const data = HISTORY_DATA[date];
+  if (!data) { showToast('이 날 발행된 레터가 없어요'); return; }
+  currentDate = date;
+  document.getElementById('current-date-chip').textContent = date;
+  const dates = allDates(); const idx = dates.indexOf(date);
+  document.getElementById('btn-prev').disabled = idx <= 0;
+  document.getElementById('btn-next').disabled = idx >= dates.length - 1;
+  // summary
+  const bar = document.getElementById('summary-bar');
+  if (data.summary) { bar.style.display = 'flex'; document.getElementById('sum-preview').textContent = data.summary; }
+  else { bar.style.display = 'none'; }
+  // panels
+  window._cards = {};
+  document.getElementById('panel-it').innerHTML        = renderSection(data.it,        'it');
+  document.getElementById('panel-marketing').innerHTML = renderSection(data.marketing, 'marketing');
+  document.getElementById('panel-economy').innerHTML   = renderSection(data.economy,   'economy');
+  document.getElementById('scroll-area').scrollTop = 0;
+  refreshScrapIcons();
+}
+
+function navDate(dir) {
+  const dates = allDates(); const idx = dates.indexOf(currentDate);
+  const next = dates[idx + dir]; if (next) selectDate(next);
+}
+
+/* ── Tabs ──────────────────────────────────────────── */
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b  => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.getElementById('scroll-area').scrollTop = 0;
+}
+
+/* ── Render ────────────────────────────────────────── */
+function renderSection(data, cat) {
+  const dom = data?.domestic||[], intl = data?.international||[];
+  if (!dom.length && !intl.length) return `<div class="empty"><div class="icon">📭</div>뉴스가 없습니다.</div>`;
+  let html = '';
+  if (dom.length)  { html += `<div class="region-header">🇰🇷 국내</div>`; dom.forEach(item  => { html += renderCard(item, cat, '국내'); }); }
+  if (intl.length) { html += `<div class="region-header">🌍 해외</div>`;  intl.forEach(item => { html += renderCard(item, cat, '해외'); }); }
+  return html;
+}
+
+function renderCard(item, cat, region) {
+  const id = cardId(item.title);
+  window._cards[id] = { ...item, cat, region, date: currentDate };
+  const scrapped = !!loadScraps()[id];
+  return `
+    <div class="news-card" id="card-${id}">
+      <div class="card-actions">
+        <button class="card-btn ${scrapped?'scrapped':''}" id="si-${id}" onclick="toggleScrap('${id}')" title="스크랩">🔖</button>
+      </div>
+      <div class="news-title">${esc(item.title)}</div>
+      <div class="news-summary">${esc(item.summary)}</div>
+      <div class="news-source">출처: <a href="${esc(item.source_url||'#')}" target="_blank">${esc(item.source_name||'출처 없음')}</a></div>
+      <div class="news-insight">💡 ${esc(item.insight)}</div>
+    </div>`;
+}
+
+/* ── Scrap ─────────────────────────────────────────── */
+function toggleScrap(id) {
+  const scraps = loadScraps();
+  if (scraps[id]) { delete scraps[id]; showToast('스크랩 해제'); }
+  else {
+    const c = window._cards[id]; if (!c) return;
+    scraps[id] = { ...c, memo: '', scrapedAt: Date.now() };
+    showToast('스크랩 저장 🔖');
+  }
+  saveScraps(scraps); updateScrapBadge(); refreshScrapIcons();
+}
+
+function refreshScrapIcons() {
+  const scraps = loadScraps();
+  document.querySelectorAll('[id^="si-"]').forEach(btn => {
+    const id = btn.id.slice(3);
+    btn.classList.toggle('scrapped', !!scraps[id]);
+  });
+}
+
+function updateScrapBadge() {
+  const n = Object.keys(loadScraps()).length;
+  const b = document.getElementById('scrap-badge');
+  if (n > 0) { b.style.display = 'flex'; b.textContent = n; }
+  else { b.style.display = 'none'; }
+}
+
+function openScraps() {
+  const scraps = loadScraps();
+  const items  = Object.entries(scraps).sort((a,b) => b[1].scrapedAt - a[1].scrapedAt);
+  document.getElementById('scrap-panel-title').textContent = `스크랩 (${items.length})`;
+  if (!items.length) {
+    document.getElementById('scrap-body').innerHTML = `<div class="week-empty">아직 스크랩한 뉴스가 없어요.<br>카드에 마우스를 올리면 🔖 버튼이 나타납니다.</div>`;
+  } else {
+    document.getElementById('scrap-body').innerHTML = items.map(([id, s]) => {
+      const hasMemo = !!s.memo;
+      return `
+        <div class="scrap-card">
+          <div class="scrap-card-top">
+            <div class="scrap-card-info">
+              <div class="scrap-meta">${esc(s.date)} · ${CAT_LABEL[s.cat]||''} · ${esc(s.region||'')}</div>
+              <div class="scrap-title">${esc(s.title)}</div>
+            </div>
+            <button class="scrap-del" onclick="removeScrap('${id}')" title="삭제">🗑️</button>
+          </div>
+          <div class="scrap-insight">💡 ${esc(s.insight)}</div>
+          <div id="mv-${id}" class="memo-view ${hasMemo?'':'empty'}" onclick="editMemo('${id}')">${hasMemo ? esc(s.memo) : '메모 추가…'}</div>
+          <div id="me-${id}" class="memo-edit">
+            <textarea class="memo-textarea" id="mt-${id}" rows="3" placeholder="메모를 입력하세요…" onkeydown="memoKey(event,'${id}')">${esc(s.memo||'')}</textarea>
+            <div class="memo-buttons">
+              <button class="memo-cancel" onclick="cancelMemo('${id}')">취소</button>
+              <button class="memo-save" onclick="saveMemo('${id}')">저장</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+  document.getElementById('scrap-overlay').classList.add('open');
+}
+function closeScraps() { document.getElementById('scrap-overlay').classList.remove('open'); }
+
+function editMemo(id) {
+  const scraps = loadScraps();
+  document.getElementById('mt-'+id).value = scraps[id]?.memo || '';
+  document.getElementById('mv-'+id).style.display = 'none';
+  document.getElementById('me-'+id).style.display = 'block';
+  document.getElementById('mt-'+id).focus();
+}
+
+function saveMemo(id) {
+  const val = document.getElementById('mt-'+id).value.trim();
+  const scraps = loadScraps();
+  if (scraps[id]) { scraps[id].memo = val; saveScraps(scraps); }
+  const view = document.getElementById('mv-'+id);
+  view.textContent = val || '메모 추가…';
+  view.classList.toggle('empty', !val);
+  view.style.display = 'block';
+  document.getElementById('me-'+id).style.display = 'none';
+  showToast('메모 저장 ✓');
+}
+
+function cancelMemo(id) {
+  document.getElementById('me-'+id).style.display = 'none';
+  document.getElementById('mv-'+id).style.display = 'block';
+}
+
+function memoKey(e, id) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveMemo(id); }
+}
+
+function removeScrap(id) {
+  const scraps = loadScraps(); delete scraps[id]; saveScraps(scraps);
+  updateScrapBadge(); refreshScrapIcons(); openScraps();
+}
+
+/* ── Weekly ────────────────────────────────────────── */
+function openWeekly() {
+  const today = new Date();
+  const days = Array.from({length:7}, (_,i) => { const d = new Date(today); d.setDate(d.getDate()-i); return fmtDate(d); }).reverse();
+  const items = days.filter(d => HISTORY_DATA[d]?.summary);
+  document.getElementById('weekly-body').innerHTML = items.length
+    ? items.map(d => `<div class="week-item"><div class="week-date">${d}</div><div class="week-summary">${esc(HISTORY_DATA[d].summary)}</div></div>`).join('')
+    : `<div class="week-empty">최근 7일간 저장된 브리핑이 없어요.</div>`;
+  document.getElementById('weekly-overlay').classList.add('open');
+}
+function closeWeekly() { document.getElementById('weekly-overlay').classList.remove('open'); }
+
+
+/* ── Calendar ──────────────────────────────────────── */
+function openCal() {
+  if (currentDate) { const p = currentDate.split('.'); calYear = +p[0]; calMonth = +p[1]-1; }
+  renderCal(); document.getElementById('cal-overlay').classList.add('open');
+}
+function closeCal() { document.getElementById('cal-overlay').classList.remove('open'); }
+function changeCalMonth(dir) {
+  calMonth += dir;
+  if (calMonth < 0) { calMonth = 11; calYear--; } if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCal();
+}
+function renderCal() {
+  const ts = fmtDate(new Date());
+  document.getElementById('cal-month-label').textContent = `${calYear}년 ${calMonth+1}월`;
+  const fd = new Date(calYear, calMonth, 1).getDay();
+  const dm = new Date(calYear, calMonth+1, 0).getDate();
+  let html = '';
+  for (let i=0;i<fd;i++) html += `<button class="cal-day" style="visibility:hidden"></button>`;
+  for (let d=1;d<=dm;d++) {
+    const ds = `${calYear}.${String(calMonth+1).padStart(2,'0')}.${String(d).padStart(2,'0')}`;
+    const hd=!!HISTORY_DATA[ds], it=ds===ts, sel=ds===currentDate, fut=ds>ts;
+    let cls='cal-day';
+    if(hd) cls+=' has-data'; else if(!fut) cls+=' no-data-past'; else cls+=' future-day';
+    if(it) cls+=' today-mark'; if(sel) cls+=' selected';
+    const ck = fut ? '' : `onclick="pickDate('${ds}')"`;
+    html += `<button class="${cls}" ${ck}>${d}</button>`;
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+}
+function pickDate(ds) { closeCal(); if(HISTORY_DATA[ds]) selectDate(ds); else showToast('이 날 발행된 레터가 없어요'); }
+
+/* ── Toast ─────────────────────────────────────────── */
+function showToast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+init();
+</script>
+</body></html>
